@@ -3,6 +3,7 @@ import axios,{AxiosRequestConfig} from "axios";
 // match making api request handler
 
 export const fetchMatchMaking=async(url:string,config?:AxiosRequestConfig)=>{
+
     try{
      const response=await axios.get(url,config);
      return response.data;
