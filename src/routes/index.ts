@@ -15,7 +15,9 @@ router.post("/registerAstrologer", AuthController.registerAndSendOTP);
 // Verify OTP
 router.post("/verify-otp", AuthController.verifyOTP);
 
-
+// login Astrologer
+router.post("/loginAstrologer",AuthController.loginController)
+// vedic matchMaking
 router.post("/getAllMatching",getAllMatchingDataController)
 
 export default router 

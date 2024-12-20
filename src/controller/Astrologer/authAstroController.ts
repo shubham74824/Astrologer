@@ -52,6 +52,24 @@ class AuthController {
    
     }
   }
+
+  // verify LOGin
+
+  static async loginController(req: Request, res: Response) {
+    try {
+      const { phone } = req.body;
+      if (!phone) {
+        handleResponse(res, 400, "Required filled missing ");
+      }
+      const response = await AuthService.loginAstrologer(phone);
+
+      res
+        .status(200)
+        .json({ message: "OTP has been sent sucessfully", response });
+    } catch (error) {
+      handleResponse(res, 500, "internal Server Error");
+    }
+  }
 }
 
 export default AuthController;

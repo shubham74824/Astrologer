@@ -80,6 +80,27 @@ class AuthService {
       data: { accessToken, refreshToken },
     };
   }
+
+  // login service 
+  static async loginAstrologer(phone: string) {
+    try {
+      const findUser=await Astrologer.findOne({phone});
+      if(!findUser){
+        return {status:400,message:"No User found by this number"}
+      };
+      const sendOTP=await genrateOTP(6);
+      await setRedisValue(phone, sendOTP, 120); // Expiration time in seconds
+
+      // Send OTP via SMS
+      await sendSMS(phone, `Your Astrologer OTP is ${sendOTP}`);
+     
+    } catch (error) {
+      if (error instanceof Error) {
+        return { status: 500, message: "Internal server error " };
+      }
+    }
+  }
+
 }
 
 export default AuthService;
