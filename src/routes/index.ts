@@ -5,6 +5,10 @@ const router: Router = express.Router();
 
 // phone number varification Route 
 
+router.get("/",(req:any,res:any)=>{
+    return res.json({message:"Working"})
+})
+
 // Register and send OTP
 router.post("/registerAstrologer", AuthController.registerAndSendOTP);
 
