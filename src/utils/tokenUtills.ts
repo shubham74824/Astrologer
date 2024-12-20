@@ -3,7 +3,7 @@ import { Types } from "mongoose"; // Import Types from mongoose to handle Object
 import DotenvFlow from "dotenv-flow";
 DotenvFlow.config()
 // Get JWT secret from environment variables and validate its existence
-const JWT_SECRET = process.env.JWT_SECREAT;
+const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
   throw new Error("JWT_SECRET is not defined in environment variables");
 }
