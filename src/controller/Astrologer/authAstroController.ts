@@ -1,7 +1,7 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import AuthService from "../../services/astrologerService/authService";
 import { handleResponse } from "../../utils/responseUtills";
-
+import { CustomRequest } from "../../types/customInterface";
 class AuthController {
   // Register and send OTP
   static async registerAndSendOTP(req: Request, res: Response) {
@@ -68,6 +68,67 @@ class AuthController {
         .json({ message: "OTP has been sent sucessfully", response });
     } catch (error) {
       handleResponse(res, 500, "internal Server Error");
+    }
+  }
+
+  // get astrologerDetails
+  static async getAstroDetails(
+    req: CustomRequest,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const userId = req.astrologerId ;
+     
+      if (!userId) {
+        handleResponse(res, 400, "User not authenticated ");
+
+        return;
+      }
+
+      // Now, userId is guaranteed to be a string
+      const user = await  AuthService.getAstroDetails(userId);
+
+      if (user) {
+        handleResponse(res, 200, "User details sucessfully", user);
+        return;
+      }
+
+      handleResponse(res, 404, "User not found");
+      return;
+    } catch (error) {
+      if (error instanceof Error) {
+        return handleResponse(res, 500, "Internal Server Error");
+      }
+    }
+  }
+
+  // get list of all astrollofer register 
+
+  static async getAllAstrologers(req: Request, res: Response) {
+    try {
+      const response = await AuthService.getAllAstrologers();
+      res.status(response.statusCode).json(response);
+    } catch (error) {
+      console.error("Error in getAllAstrologers:", error);
+      handleResponse(res, 500, "Internal server error");
+    }
+  }
+
+  // Get astrologer by ID
+  static async getAstrologerById(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        return handleResponse(res, 400, "Astrologer ID is required");
+      }
+
+      const response = await AuthService.getAstrologerById(id);
+      res.status(response.statusCode).json(response);
+    } catch (error) {
+      console.error("Error in getAstrologerById:", error);
+      handleResponse(res, 500, "Internal server error");
     }
   }
 }

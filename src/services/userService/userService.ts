@@ -1,38 +1,33 @@
-import Astrologer from "../../models/adminSchema/astrologerModel";
+import User from "../../models/userSchema/userModels";
 import { setRedisValue, getRedisValue } from "../../helper/redisConnection";
 import { sendSMS } from "../../helper/fast2SmsConnection";
 import { genrateOTP } from "../otpService";
 import { generateToken } from "../../utils/tokenUtills";
-import { isAstrologer } from "../../models/adminSchema/astrologerModel";
+import { isUser } from "../../models/userSchema/userModels";
 import { Types } from "mongoose";
-class AuthService {
+class UserService {
   // save data and send otp
 
   static async registerAndSendOTP(userdata: any) {
-    const { name, email, phone, experience, gender, city, country } = userdata;
+    const { name, phone } = userdata;
 
     // Check if phone or email already exists
-    const existingUser = await Astrologer.findOne({
-      $or: [{ phone }, { email }],
+    const existingUser = await User.findOne({
+      phone,
+      
     });
     if (existingUser) {
       return {
         statusCode: 400,
-        message: "Email or Mobile number already exist",
+        message: "This Mobile number already exist",
       };
     }
 
     // Create and save a new astrologer record
-    const newUser = new Astrologer({
+    const newUser = new User({
       name,
       phone,
-      email,
-      gender,
-      experience,
-      city,
-      country,
-      isProfileCompleted: false,
-      isAccountApprovedByAdmin: false,
+    
     });
 
     await newUser.save();
@@ -42,7 +37,7 @@ class AuthService {
     await setRedisValue(phone, otp, 120); // Expiration time in seconds
 
     // Send OTP via SMS
-    await sendSMS(phone, `Your Astrologer OTP is ${otp}`);
+    await sendSMS(phone, `Your User OTP is ${otp}`);
 
     return { message: "User registered successfully. OTP sent to phone." };
   };
@@ -59,12 +54,12 @@ class AuthService {
     // Clear the OTP from Redis after successful verification
     await setRedisValue(phone, "", 0); // Set to empty with immediate expiration
     // After OTP is verified, find the user (astrologer) in the database
-    const user = await Astrologer.findOne({ phone });
+    const user = await User.findOne({ phone });
     if (!user) {
       return { statusCode: 404, message: "User not found" };
     }
 
-    const typedUser = user as isAstrologer;
+    const typedUser = user as isUser;
     // Ensure that _id is either ObjectId or string (as per your generateToken function requirements)
     const userId =
       typedUser._id instanceof Types.ObjectId
@@ -84,7 +79,7 @@ class AuthService {
   // login service 
   static async loginAstrologer(phone: string) {
     try {
-      const findUser=await Astrologer.findOne({phone});
+      const findUser=await User.findOne({phone});
       if(!findUser){
         return {status:400,message:"No User found by this number"}
       };
@@ -101,13 +96,37 @@ class AuthService {
     }
   }; 
 
-  static async getAstroDetails (astrologerId:string){
+
+  static async regenerateOTP(phone: string) {
     try {
-      const user = await Astrologer.findById(
-         astrologerId ,
+      // Check if the user exists
+      const existingUser = await User.findOne({ phone });
+      if (!existingUser) {
+        return { statusCode: 404, message: "User not found." };
+      }
+  
+      // Generate a new OTP and store it in Redis
+      const newOTP = genrateOTP(6);
+      await setRedisValue(phone, newOTP, 120); // Expire in 2 minutes
+  
+      // Send the new OTP via SMS
+      await sendSMS(phone, `Your new OTP is ${newOTP}`);
+  
+      return { statusCode: 200, message: "New OTP sent successfully." };
+    } catch (error) {
+      console.error("Error regenerating OTP:", error);
+      return { statusCode: 500, message: "Internal server error." };
+    }
+  }
+
+  // getUser Details service
+  static async getUserById(userId: string) {
+    try {
+      const user = await User.findById(
+         userId 
        
       );
-
+    
       if (!user) {
         return { success: false, statusCode: 400, message: "User not found " };
       }
@@ -121,33 +140,7 @@ class AuthService {
         };
       }
     }
-  };
-
-  // get all astrolloger register in our database 
-  static async getAllAstrologers() {
-    try {
-      const astrologers = await Astrologer.find({});
-      return { statusCode: 200, data: astrologers };
-    } catch (error) {
-      console.error("Error fetching astrologers:", error);
-      return { statusCode: 500, message: "Internal server error" };
-    }
   }
-
-  //   get only one astrologer by sending id 
-  static async getAstrologerById(id: string) {
-    try {
-      const astrologer = await Astrologer.findById(id);
-      if (!astrologer) {
-        return { statusCode: 404, message: "Astrologer not found" };
-      }
-      return { statusCode: 200, data: astrologer };
-    } catch (error) {
-      console.error("Error fetching astrologer by ID:", error);
-      return { statusCode: 500, message: "Internal server error" };
-    }
-  }
-
 }
 
-export default AuthService;
+export default UserService;
